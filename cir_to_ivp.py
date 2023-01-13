@@ -8,9 +8,6 @@ import time
 
 from numpy.linalg import inv
 
-import wrspiceoutput as wo
-import josim_plotter as jo
-
 import findtree
 import construct_matrices as cm
 import read_cir
@@ -97,24 +94,6 @@ Jedges, Cedges, Kedges, Lchords, Bchords, Zchords, Redges, RedgesC = edge_types
 numJ, numC, numK, numL, numB, numZ, numR, numRC = num_types
 iB, diB = external    # TODO add phix and dphix -- currently assumed to be zero.
 iBvalues = np.array([f(0) for f in iB])
-# rise = 1e-14
-# iB0 = []
-# for current in iBvalues:
-#     value = read_cir.convert_value("pulse(0,"+str(current)+",0,"+str(rise)+",0,0,0)")
-#     # print("VALUE:\n",value)
-# for e in Bchords:
-#     fb=value
-#     if not hasattr(fb, '__call__'):
-#         fbval = fb
-#         # print("fbval:\n",fbval)
-#         def fbstuff(t, value):
-#             return value
-#         fb = lambda t: fbstuff(t, fbval)
-#         # print("fb:\n",fb)
-#     iB0.append(fb)
-# iB0 = np.array(iB0)
-# # print(iB0)
-# external0 = [iB0, None]
 
 print('numJ:', numJ, 'numC:', numC, 'numK:', numK)
 print('numL:', numL, 'numB:', numB, 'numZ:', numZ)
@@ -227,8 +206,6 @@ etas = [eta, inveta, etaC, invetaC, area, invarea]
 
 
 L_mats = [L, L_K, L_LK]
-# Create ODE function, simulate and plot
-# rhs = cm.manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames, external, params)
 
 # Now adding the model information
 models = my_circuit.models
@@ -238,29 +215,16 @@ rhs = cm.manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, e
 
 # Simulate
 timerange = (0,4e-9)
-#timerange = (0, 20e-9)
 yinit = np.array([0]*(2*numJ+2*numC+numZ))
-#yinit = np.array([0]*(2*numJ+numZ))
 
-# yinit = np.array([0]*(2*numJ+numC+numZ+3))
 start_time = time.time()
 S = scipy.integrate.solve_ivp(rhs, timerange, yinit, atol=2.23e-14, rtol=2.23e-14,method = "DOP853")
-#t_eval = np.arange(0,0.1e-10,0.01e-12))
-# S = scipy.integrate.solve_ivp(rhs, timerange, yinit,atol=1e-9,rtol=1e-12,method = "BDF")
-# S = scipy.integrate.solve_ivp(rhs, timerange, yinit,atol=1e-10,rtol=1e-13,method = "LSODA",max_step=0.01e-13)
-# S = scipy.integrate.solve_ivp(rhs, timerange, yinit,atol=1e-10,rtol=1e-14,method = "DOP853",max_step = 0.01e-13)
-# S = scipy.integrate.solve_ivp(rhs, timerange, yinit,method='BDF',atol=1e-6,rtol=1e-9)
+
 print("--- %s seconds ---" % (time.time() - start_time))
 
 # Plot
 
-#titles = [r'$\varphi_c$',r'$\varphi_p$',r"$\varphi_c'$",r"$\varphi_p'$",'$V_c$',
-#titles = [r'$\varphi$',r'$V$']
-#titles = [r"$\varphi_1$",r"$\varphi_2$",r"$V_1$", r"$V_2$",r"$\Phi_L$"]
-#titles = [r"$\varphi_1$",r"$\varphi_2$",r"$\varphi_3$",r"$\varphi_4$",r"$V_1$", r"$V_2$",r"$V_3$",r"$V_4$",r"$\Phi_Z$"]
-
 for i in range(len(S.y[:])):
-#for i in range(1):
     plt.figure(i)
     if i in range(0,numJ):
         plt.plot(S.t[:],S.y[i][:],'-',color='#4258a1',label="Python")
@@ -278,36 +242,8 @@ for i in range(len(S.y[:])):
     elif i in range(2*numJ+2*numC,2*numJ+2*numC+numZ):
         plt.plot(S.t[:],S.y[i][:],'-',color='#4258a1',label="Python")
         plt.ylabel(r"Resistor Flux ($Wb$)")
-#    elif i in range(2*numJ,2*numJ+numZ):
-#        plt.plot(S.t[:],S.y[i][:],'-',color='#4258a1',label="Python")
-#        plt.ylabel(r"Resistor Flux ($Wb$)")
 
-
-#    plt.title(titles[i])
     plt.xlabel(r"Time $(s)$")
-    plt.savefig("FIG/fig_"+str(i)+".png",dpi=800)
-    # plt.show()
-    plt.close()
-
-#JOSIM OUPTUT
-
-#T, Y = jo.processOutputs("output_singlejunction_IV_josim.csv")
-#print(np.shape(Y))
-#
-#for i in range(2,np.shape(Y)[0]):
-#    plt.figure(i)
-#    if i==2:
-#        Yy = np.array(Y[i])/2/np.pi
-#    else:
-#        Yy = np.array(Y[i])
-#    plt.plot(T,Yy,'-')
-#    plt.plot(S.t,S.y[i-2],'--')
-#    plt.savefig('FIG/singlejunction_josim_overlap_'+str(i)+".png",dpi=800)
-
-difft = np.diff(S.t)
-tperiod = S.t[1:]
-
-plt.figure(3*len(S.y[:])+5)
-plt.plot(tperiod,difft,'-',color='#4258a1',label='Python')
-plt.legend(loc="upper right")
-plt.savefig("FIG/timestep.png",dpi = 800)
+#    plt.savefig("FIG/fig_"+str(i)+".png",dpi=800)
+    plt.show()
+#    plt.close()
