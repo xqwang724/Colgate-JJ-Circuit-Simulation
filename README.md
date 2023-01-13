@@ -8,7 +8,7 @@ Here we present the source codes for simulating classical superconducting circui
 
 ## User guide
 
-To use the program, put the SPICE circuit file in the same folder as the Python scripts. Change the name of the circuit accordingly.
+To use the program, put the SPICE circuit file in the same folder as the Python scripts. Change the name of the circuit accordingly in ```cir_to_ivp'''.
 
 ```python
 ColgateJJSim(circuit_name, simulation_length)
