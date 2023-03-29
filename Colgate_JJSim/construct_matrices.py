@@ -85,11 +85,6 @@ def make_matrices(G, tree):
     shunt_resistor_edges = [(u,v,k) for (u,v,k,dd) in G.edges(data=True,keys=True) if ('R' in dd) and (u,v) in junction_nodes]
 #    shunt_resistor_edges = []
     shunt_resistor_edges_C = [(u,v,k) for (u,v,k,dd) in G.edges(data=True,keys=True) if ('R' in dd) and (u,v) in capacitor_nodes]
-#    shunt_resistor_edges_C = []
-    # print("Junction Edges", junction_edges)
-    # print("Resistor Edges", resistor_edges)
-#    print("shunt resistor edges", shunt_resistor_edges)
-#    print("Junction Nodes", junction_nodes)
     inductor_edges = [(u,v,k) for (u,v,k,dd) in G.edges(data=True, keys=True) if 'L' in dd]
 
 #    chords = [(u,v,k) for (u,v,k) in G.edges(keys=True) if not tree.has_edge(u,v,k)]
@@ -114,14 +109,14 @@ def make_matrices(G, tree):
     numR = len(Redges)
     numRC = len(RedgesC)
 
-#    print("Jedges",Jedges)
-#    print("Cedges",Cedges)
-#    print("Kedges",Kedges)
-#    print("Lchords",Lchords)
-#    print("Bchords",Bchords)
-#    print("Zchords",Zchords)
-#    print("Redges", Redges)
-#    print("RedgesC", RedgesC)
+    print("Jedges",Jedges)
+    print("Cedges",Cedges)
+    print("Kedges",Kedges)
+    print("Lchords",Lchords)
+    print("Bchords",Bchords)
+    print("Zchords",Zchords)
+    print("Redges", Redges)
+    print("RedgesC", RedgesC)
 
     print("Find Tree:  below is a list of the chords used for each F matrix")
     if Lchords:
@@ -138,10 +133,10 @@ def make_matrices(G, tree):
     if Bchords:
 #        print("JB", end='')
         F_JB = makeF(tree, Jedges, Bchords)
-        # print(F_JB)
+        print(F_JB)
 #        print("CB", end='')
         F_CB = makeF(tree, Cedges, Bchords)
-#        print("F_CB", F_CB)
+        print("F_CB", F_CB)
 #        print("KB", end='')
         F_KB = makeF(tree, Kedges, Bchords)
     else:
@@ -162,10 +157,11 @@ def make_matrices(G, tree):
 
 
     F_mats = [F_JL, F_JB, F_JZ, F_CL, F_CB, F_CZ, F_KL, F_KB, F_KZ]
-#    print("F_KB", F_KB)
-#    print("F_JB", F_JB)
-#    print("F_KL", F_KL)
-#    print("F_KZ", F_KZ)
+    print("F_KB", F_KB)
+    print("F_JB", F_JB)
+    print("F_KL", F_KL)
+    print("F_KZ", F_KZ)
+    print("F_JL", F_JL)
     edge_types = [Jedges, Cedges, Kedges, Lchords, Bchords, Zchords, Redges, RedgesC]
     num_types = [numJ, numC, numK, numL, numB, numZ, numR, numRC]
 
@@ -206,36 +202,19 @@ def Ifinv(mat):
         return matmod
 
 def readRshunt(numjunc,models,Jedges,Redges,Rshunt,invRshunt,area):
-    # R = np.zeros([numjunc,numjunc])
-    # invR =np.zeros([numjunc,numjunc])
+
     R = np.zeros((numjunc,1))
     invR = np.zeros((numjunc,1))
-    # print("R:", R[1,0])
-    # print("Rshunt:\n",Rshunt)
-    # print("invRshunt:\n",invRshunt)
 
     for i in range(numjunc):
         jnode = (Jedges[i][0],Jedges[i][1])
         rnodes = [(u,v) for (u,v,k) in Redges]
-        # print("RNODES", rnodes)
-        # print("JNODE", jnode)
-        # print("Rshunt",Rshunt[i])
-        # print(models["B"+str(i)]["rtype"])
         if jnode in rnodes and models["B"+str(i)]["rtype"] == 1:
-            # R[i][i] = 1/(1/np.sqrt(area)*models["B"+str(i)]["rn"] + invRshunt)
-            # R.append(1/(1/np.sqrt(area)*models["B"+str(i)]["rn"] + invRshunt[i]))
             R[i,0] = (1/(1/np.sqrt(area)*models["B"+str(i)]["rn"] + invRshunt[i]))
-            # invR[i][i] = (1/np.sqrt(area)*models["B"+str(i)]["rn"] + invRshunt)
             invR[i,0] = ((1/np.sqrt(area)*models["B"+str(i)]["rn"] + invRshunt[i]))
         elif jnode in rnodes and models["B"+str(i)]["rtype"] == 0:
-            # R[i][i] =Rshunt
             R[i,0] = Rshunt[i]
-            # invR[i][i] =1/Rshunt
             invR[i,0]=invRshunt[i]
-#        elif jnode not in rnodes and models["B"+str(i)]["rtype"] == 1:
-#            print("PRINT:",type(1/np.sqrt(area)*models["B"+str(i)]["rn"]))
-#            print(1/np.sqrt(area)*models["B"+str(i)]["rn"])
-#            R[i,0] = 1/np.sqrt(area)*models["B"+str(i)]["rn"]
         else:
             print("No shunt resistor found.")
             continue
@@ -248,21 +227,13 @@ def readRshunt(numjunc,models,Jedges,Redges,Rshunt,invRshunt,area):
 
 
 def readRshuntC(numc,Cedges,RedgesC,Rshunt,invRshunt):
-    # R = np.zeros([numjunc,numjunc])
-    # invR =np.zeros([numjunc,numjunc])
+
     R = np.zeros((numc,1))
     invR = np.zeros((numc,1))
-    # print("R:", R[1,0])
-    # print("Rshunt:\n",Rshunt)
-    # print("invRshunt:\n",invRshunt)
 
     for i in range(numc):
         cnode = (Cedges[i][0],Cedges[i][1])
         rnodes = [(u,v) for (u,v,k) in RedgesC]
-        # print("RNODES", rnodes)
-        # print("JNODE", jnode)
-        # print("Rshunt",Rshunt[i])
-        # print(models["B"+str(i)]["rtype"])
         if cnode in rnodes:
             R[i,0] = Rshunt[i]
             invR[i,0] = invRshunt[i]
@@ -274,11 +245,9 @@ def readRshuntC(numc,Cedges,RedgesC,Rshunt,invRshunt):
 
     R = reshape(np.transpose(np.array(R)))[0]
     invR = reshape(np.transpose(np.array(invR)))[0]
-#    print("R: \n",R)
     return R,invR
 
 
-# def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames, external,models):
 def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames, external,models):
     L, L_K, L_LK = L_mats
     F_JL, F_JB, F_JZ, F_CL, F_CB, F_CZ, F_KL, F_KB, F_KZ = F_mats
@@ -286,10 +255,7 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
     numJ, numC, numK, numL, numB, numZ, numR, numRC = num_types
     iB, diB = external
 
-#    print("iB, diB:", iB, diB)
     iBvalues = [f(0) for f in iB]
-    # print("iBvalues:",iBvalues)
-    # print("function?",iB[1](0))
 
     # iBint = []
     # num_steps = 1000
@@ -310,11 +276,6 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
 
     Rz, invRz, Rshunt, invRshunt , RshuntC, invRshuntC = Rzs
     eta, inveta, etaC, invetaC, area, invarea= etas
-    #invetaC = reshape(np.transpose(np.array(invetaC)))[0]
-    #Rz = reshape(np.transpose(np.array(Rz)))[0]
-    #invRz = reshape(np.transpose(np.array(invRz)))[0]
-    # gamma, coupling_lambda = params
-    # print("invRz:",invRz)
 
     nume=len(next(iter(enames)))
 #    print('Edges that are Chords:')
@@ -478,32 +439,6 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
     Ca = reshape(np.transpose(np.array(Ca)))[0]
     #print("Ca", Ca)
 
-    # def rhs(t,y):
-    #     phi = y[:numJ]
-    #     v = y[numJ:(2*numJ)]
-    #     vcap = y[(2*numJ):(2*numJ+numC)]
-    #     phiZ = y[(2*numJ+numC):(2*numJ+numC+numZ)]
-    #     #
-    #     iBvalue = np.array([f(t) for f in iB])
-    #     #
-    #     # Note: sqbrack would have phi_x in there is we set up a way to store it.
-    #     lam = coupling_lambda
-    #     sqbrack1 = transF_JL @ phi - transF_KL @ Ltwidle_K @ F_KB @ iBvalue/lam
-    #     sqbrack2 = transF_JZ @ v - transF_KZ @ Ltwidle_K @ F_KB @ iBvalue/lam - phiZ
-    #     vz = lam/gamma * Rz @ (- invLtwidle_LL @ sqbrack1 + invLtwidle_D @ sqbrack2)
-    #     phiL = Lbar @ (invLtwidle_LL @ sqbrack1 + invL_LL @ L_LZ @ (- invLtwidle_D) @ sqbrack2)
-    #     #
-    #     ForcingJ = inveta @ (lam * F_JL @ invLtwidle_L @ phiL + gamma * Fbar_JZ @ invRz @ vz + Fbar_JB @ iBvalue)
-    #     ForcingC = invetaC @ (lam * F_CL @ invLtwidle_L @ phiL + gamma * Fbar_CZ @ invRz @ vz + Fbar_CB @ iBvalue)
-    #     #
-    #     dphi = v
-    #     dv = -np.sin(phi) - gamma * v - ForcingJ
-    #     dvc = -ForcingC
-    #     dphiz = vz
-    #     result_rhs = np.concatenate((dphi, dv, dvc, dphiz))
-    #     return result_rhs
-    # return rhs
-
     def rhs(t,y):
         phi = y[:numJ]
         # v = y[numJ:(2*numJ)]
@@ -511,55 +446,32 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
         phic = y[(2*numJ):(2*numJ+numC)]
         Vc = y[(2*numJ+numC):(2*numJ+2*numC)]
         PhiZ = y[(2*numJ+2*numC):(2*numJ+2*numC+numZ)]
-#        PhiZ = y[(2*numJ):(2*numJ+numZ)]
 
         iBvalue = np.array([f(t) for f in iB])
         invL_J =  i0
-    #Correct but partial
-#        sqbrack1 = (Phi0 /2/np.pi) * transF_JL @ phi - transF_KL @ Ltwidle_K @ F_KB @ iBvalue
-#        sqbrack2 = (Phi0/2/np.pi) * transF_JZ @ phi - transF_KZ @ Ltwidle_K @ F_KB @ iBvalue - PhiZ
 
-    #V2 (Wrong)
-#        sqbrack1 = (Phi0 /2/np.pi) * (transF_JL @ phi + transF_CL @ phic) - transF_KL @ Ltwidle_K @ F_KB @ iBvalue
-#        sqbrack2 = (Phi0/2/np.pi) * (transF_JZ @ phi + transF_CZ @ phic) - transF_KZ @ Ltwidle_K @ F_KB @ iBvalue - PhiZ
-        #print(transF_CZ @ phic)
-    #V1 Merge vector both
+# Merge vector both
         phijc = np.concatenate((phi,phic))
         transF_JCL = np.transpose(np.concatenate((F_JL, F_CL),axis=0))
         transF_JCZ = np.transpose(np.concatenate((F_JZ, F_CZ),axis=0))
         sqbrack1 = (Phi0 /2/np.pi) * transF_JCL @ phijc - transF_KL @ Ltwidle_K @ F_KB @ iBvalue
         sqbrack2 = (Phi0/2/np.pi) * transF_JCZ @ phijc - transF_KZ @ Ltwidle_K @ F_KB @ iBvalue - PhiZ
-#        print(sqbrack2)
-#        print(phijc)
 
         Vz = Rz @ (- invL_D @ L_ZL @ invLtwidle_LL @ sqbrack1 + invLtwidle_D @ sqbrack2)
         #print(Vz)
-        # WE CAN'T SIMULATE A CIRCUIT WITHOUT AN INDUCTOR?? That's Because
-        # L_Zis taken out
 
 
         PhiL = Lbar @ (invLtwidle_LL @ sqbrack1 + invL_LL @ L_LZ @ (- invLtwidle_D) @ sqbrack2)
         ForcingJ = (F_JL @ invLtwidle_L @ PhiL + Fbar_JZ @ invRz @ Vz + Fbar_JB @ iBvalue)
 
-    #Wrong Equations Right Result for RC
-        #ForcingC = (F_CL @ invLtwidle_L @ PhiL + Fbar_CZ @ invRz @ Vc + Fbar_CB @ iBvalue)
 
         ForcingC = (F_CL @ invLtwidle_L @ PhiL + Fbar_CZ @ invRz @ Vz + Fbar_CB @ iBvalue)
-#        print(ForcingC)
-#        print(np.shape(Fbar_JB))
-#        print(np.shape(Fbar_CB))
-#        print(np.shape(Vc))
-#        print(np.shape(Vz))
-        #ForcingC =  Fbar_CZ @ invRz @ Vc
 
         dphi = 2*np.pi/Phi0*V
         dV = 1/Ca * (-invL_J * np.sin(phi) - invReq * V - ForcingJ)
         dphic = 2*np.pi/Phi0*Vc
-        #print(invetaC)
-#        ForcingC = (F_CL @ invLtwidle_L @ PhiL + Fbar_CZ @ invRz @ Vz + Fbar_CB @ iBvalue)
         dVc = - invetaC @ (invReqC * Vc + ForcingC)
         dPhiz = Vz
-#        result_rhs = np.concatenate((dphi, dV,dPhiz))
-        result_rhs = np.concatenate((dphi, dV, dphic, dVc, dPhiz))
+        result_rhs = np.concatenate((dphi, dV, dphic, dVc, iBvalue))
         return result_rhs
     return rhs

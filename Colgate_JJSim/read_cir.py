@@ -18,7 +18,7 @@ units = dict(u=1.e-6, p=1.e-12, n=1e-9, m=1e-3, k=1e3)
 def convert_value(value):
     # print(value)
     topvalue = value.split()[0]
-    # print(topvalue)
+    print("topvalue",topvalue)
     last = topvalue[-1]
     if last in "0123456789":
         # print(last)
@@ -131,8 +131,14 @@ def cir_to_networkx(filename):
                 #     G.mutual_inductance[L1][L2] = value * scale
                 # continue
             name = fields[0]
-            node = int(fields[1])
-            nbr = int(fields[2])
+
+            if fields[1] == "GROUND":
+                node = 1
+            elif fields[2] == "GROUND":
+                nbr = 1
+            else:
+                node = int(fields[1])
+                nbr = int(fields[2])
 
             if tp == "B":
                 # print(fields)
@@ -148,6 +154,7 @@ def cir_to_networkx(filename):
                 value = convert_value(" ".join(fields[3:]))
             elif tp in comp_type:
                 value = convert_value(" ".join(fields[3:]))
+                print("value = ",value)
             else:
                 print("Line not clear: ",line)
                 print("Ignored")
@@ -216,9 +223,9 @@ def cir_to_networkx(filename):
         #    print(nbrdict.items())
            print(node, nbr, "%e"%M)
         #    print(node, nbr, "%e"%(G.edges[edges_by_name[node]]['L']))
-    # nx.draw_networkx(G, pos)
-    # nx.draw_networkx_edge_labels(G, pos, edge_labels=nx.get_edge_attributes(G,'label'))
-    # plt.show()
+#    nx.draw_networkx(G, pos)
+#    nx.draw_networkx_edge_labels(G, pos, edge_labels=nx.get_edge_attributes(G,'label'))
+    #plt.show()
     # print(models)
     return G
 
@@ -228,7 +235,8 @@ if __name__ == "__main__":
     # cir_to_networkx("test_circuit.cir")
     # G = cir_to_networkx("jjdram_0816.cir")
     # G = cir_to_networkx("RLcir.cir")
-    G = cir_to_networkx("singleneuron_mod.cir")
+    #G = cir_to_networkx("singleneuron_mod.cir")
+    G = cir_to_networkx("singleneuron_input.cir")
     #G = cir_to_networkx("multineurons_20n/multineurons_exp_5_20n.cir")
     # cir_to_networkx("jjdram_mod.cir")
     # print(G.models["jj02"])
