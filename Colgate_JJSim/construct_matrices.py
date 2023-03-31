@@ -180,12 +180,10 @@ def make_matrices(G, tree):
         fb=G.edges[e]['I']
         if not hasattr(fb, '__call__'):
             fbval = fb
-            # print("fbval:\n",fbval)
-            def fbstuff(t, value):
-                return value
-            fb = lambda t: fbstuff(t, fbval)
-            print("fb:\n",fb)
+            fb = lambda t,fb=fbval: fb
+            print("fb(0):\n",fb(0))
         iB.append(fb)
+
     iB = np.array(iB)
 
     external = [iB, None]
