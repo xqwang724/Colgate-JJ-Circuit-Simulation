@@ -175,6 +175,7 @@ def make_matrices(G, tree):
 #    phix = np.array(phix)
 #    dphix = 0 * phix
 
+
     iB = []
     for e in Bchords:
         fb=G.edges[e]['I']
@@ -273,7 +274,8 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
 
 
     Rz, invRz, Rshunt, invRshunt , RshuntC, invRshuntC = Rzs
-    eta, inveta, etaC, invetaC, area, invarea= etas
+#    eta, inveta, etaC, invetaC, area, invarea= etas
+    C, invC, area, invarea = etas
 
     nume=len(next(iter(enames)))
 #    print('Edges that are Chords:')
@@ -437,6 +439,14 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
     Ca = reshape(np.transpose(np.array(Ca)))[0]
     #print("Ca", Ca)
 
+
+
+    Fmats_tr = [transF_JL, transF_JZ, transF_CL, transF_CZ, transF_KL, transF_KZ]
+    F_bars = [Fbar_KL,Fbar_JZ,Fbar_CZ,Fbar_JB,Fbar_CB]
+    Lmats_inv = [invL,invL_K,invLbar,invLbar_K,invL_LL,invLtwidle_L,invL_D,invLtwidle_LL,invLtwidle_D]
+    Ls = [Lbar,Lbar_K,Ltwidle_K,L_LL,L_LZ,L_ZL,L_D]
+    model_para = [i0,Ca]
+
     def rhs(t,y):
         phi = y[:numJ]
         # v = y[numJ:(2*numJ)]
@@ -454,10 +464,9 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
         transF_JCZ = np.transpose(np.concatenate((F_JZ, F_CZ),axis=0))
         sqbrack1 = (Phi0 /2/np.pi) * transF_JCL @ phijc - transF_KL @ Ltwidle_K @ F_KB @ iBvalue
         sqbrack2 = (Phi0/2/np.pi) * transF_JCZ @ phijc - transF_KZ @ Ltwidle_K @ F_KB @ iBvalue - PhiZ
+        # print("sqbrack2 in sim",sqbrack2)
 
         Vz = Rz @ (- invL_D @ L_ZL @ invLtwidle_LL @ sqbrack1 + invLtwidle_D @ sqbrack2)
-        #print(Vz)
-
 
         PhiL = Lbar @ (invLtwidle_LL @ sqbrack1 + invL_LL @ L_LZ @ (- invLtwidle_D) @ sqbrack2)
         ForcingJ = (F_JL @ invLtwidle_L @ PhiL + Fbar_JZ @ invRz @ Vz + Fbar_JB @ iBvalue)
@@ -468,8 +477,9 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
         dphi = 2*np.pi/Phi0*V
         dV = 1/Ca * (-invL_J * np.sin(phi) - invReq * V - ForcingJ)
         dphic = 2*np.pi/Phi0*Vc
-        dVc = - invetaC @ (invReqC * Vc + ForcingC)
+        dVc = - invC @ (invReqC * Vc + ForcingC)
         dPhiz = Vz
-        result_rhs = np.concatenate((dphi, dV, dphic, dVc, iBvalue))
+        result_rhs = np.concatenate((dphi, dV, dphic, dVc,dPhiz))
         return result_rhs
-    return rhs
+
+    return rhs, Fmats_tr, F_bars, Lmats_inv, Ls, model_para

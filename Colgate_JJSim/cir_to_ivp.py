@@ -17,7 +17,9 @@ import os
 Phi0 = 2.067833848e-15
 
 
-my_circuit = read_cir.cir_to_networkx("singleneuron_fast.cir")
+#my_circuit = read_cir.cir_to_networkx("singleneuron_fast.cir")
+# my_circuit = read_cir.cir_to_networkx("jjdram_mod.cir")
+my_circuit = read_cir.cir_to_networkx("jjdram_00.cir")
 
 print("Check non-MultiGraph:", my_circuit.edges.data())
 print(my_circuit.is_multigraph())
@@ -58,11 +60,10 @@ if draw_me:
 F_mats, edge_types, num_types, external = cm.make_matrices(my_circuit, my_tree)
 F_JL, F_JB, F_JZ, F_CL, F_CB, F_CZ, F_KL, F_KB, F_KZ = F_mats
 Jedges, Cedges, Kedges, Lchords, Bchords, Zchords, Redges, RedgesC = edge_types
-#numJ, numC, numK, numL, numB, numZ, numR, numRC = num_types
 numJ, numC, numK, numL, numB, numZ, numR, numRC = num_types
 iB, diB = external    # TODO add phix and dphix -- currently assumed to be zero.
-iBvalues = np.array([f(0) for f in iB])
-print("iBvalues",iBvalues)
+print("iB", iB)
+
 # rise = 1e-14
 # iB0 = []
 # for current in iBvalues:
@@ -169,17 +170,17 @@ print("invRshuntC:\n", invRshuntC)
 Rzs = [Rz, invRz, Rshunt, invRshunt, RshuntC, invRshuntC]
 
 # Junctions
-eta = np.zeros([numJ,numJ])
-inveta = np.zeros([numJ,numJ])
+#eta = np.zeros([numJ,numJ])
+#inveta = np.zeros([numJ,numJ])
 area = np.zeros(numJ)
 invarea = np.zeros(numJ)
 for i, Ji in enumerate(Jedges):
     J = my_circuit.edges[Ji]['J']
-    eta[i,i] = J
-    inveta[i,i] = 1/J
+#    eta[i,i] = J
+#    inveta[i,i] = 1/J
     area[i] = J
     invarea[i] = 1/J
-print("eta:\n",eta)
+#print("eta:\n",eta)
 
 # Capacitors
 etaC = np.zeros([numC,numC])
@@ -189,7 +190,8 @@ for i, Ci in enumerate(Cedges):
     etaC[i,i] = C
     invetaC[i,i] = 1/C
 print("etaC:\n",etaC)
-etas = [eta, inveta, etaC, invetaC, area, invarea]
+#etas = [eta, inveta, etaC, invetaC, area, invarea]
+etas = [etaC, invetaC, area, invarea]
 
 
 L_mats = [L, L_K, L_LK]
@@ -198,16 +200,16 @@ L_mats = [L, L_K, L_LK]
 models = my_circuit.models
 
 
-rhs = cm.manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames, external,models)
+rhs,F_mats_tr,Fbars,Lmats_inv,Ls,model_para = cm.manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames, external,models)
 
 # Simulate
-timerange = (0,0.1e-9)
+timerange = (0,2e-10)
 
-#yinit = np.array([0]*(2*numJ+2*numC+numZ))
-yinit = np.array([0]*(2*numJ+2*numC+numZ+numB))
+yinit = np.array([0]*(2*numJ+2*numC+numZ))
+#yinit = np.array([0]*(2*numJ+2*numC+numZ+numB))
 
 start_time = time.time()
-S = scipy.integrate.solve_ivp(rhs, timerange, yinit, atol=2.23e-14, rtol=2.23e-14,method = "DOP853")
+S = scipy.integrate.solve_ivp(lambda t,y:rhs(t,y), timerange, yinit, atol=2.23e-14, rtol=2.23e-14,method = "DOP853")
 print("--- %s seconds ---" % (time.time() - start_time))
 
 # Plot
@@ -226,29 +228,279 @@ for i in range(len(S.y[:])):
     elif i in range(numJ,2*numJ):
         plt.plot(S.t[:],S.y[i][:]*1000,'-',color='#4258a1',label="ODE Only")
         plt.ylabel(r"Voltage ($mV$)")
-        plt.title(r"Junction Voltage "+str(i%numJ+1))
+        plt.title(r"Junction Voltage "+str((i-numJ)%numJ+1))
     elif i in range(2*numJ,2*numJ+numC):
         plt.plot(S.t[:],S.y[i][:],'-',color='#4258a1',label="ODE Only")
         plt.ylabel(r"Phase")
-        plt.title(r"Capacitor Phase "+str(i%numC+1))
+        plt.title(r"Capacitor Phase "+str((i-2*numJ)%numC+1))
     elif i in range(2*numJ+numC,2*numJ+2*numC):
         plt.plot(S.t[:],S.y[i][:]*1000,'-',color='#4258a1',label="ODE Only")
         plt.ylabel(r"Voltage ($mV$)")
-        plt.title(r"Capacitor Voltage "+str(i%numC+1))
-#    elif i in range(2*numJ+2*numC,2*numJ+2*numC+numZ):
+        plt.title(r"Capacitor Voltage "+str((i-2*numJ+numC)%numC+1))
     elif i in range(2*numJ+2*numC,2*numJ+2*numC+numZ):
         plt.plot(S.t[:],S.y[i][:],'-',color='#4258a1',label="ODE Only")
         plt.ylabel(r"Flux ($Wb$)")
-        plt.title(r"Resistor Flux "+str(i%numZ+1))
-    elif i in range(2*numJ+2*numC+numZ,2*numJ+2*numC+numZ+numB):
-        current = np.diff(S.y[i][:]) / tperiod
-        plt.plot(np.array(tperiod),np.array(current)*1000,'-',color='#4258a1',label="ODE Only")
-#        plt.plot(S.t[:],np.array(iB)*1000,'-',color='#4258a1',label="ODE Only")
-        plt.ylabel(r"Current ($mA$)")
-        plt.title(r"Current Source "+str(i%numB+1))
+        plt.title(r"Resistor Flux "+str((i-2*numJ+2*numC)%numZ+1))
     plt.legend(loc="lower right",prop={'size': 10})
     plt.xlabel(r"Time $(s)$")
     plt.savefig("FIG/fig_"+str(i)+".png",dpi=800)
     # plt.show()
     plt.close()
 
+# Post Simulation
+start_time = time.time()
+transF_JL,transF_JZ,transF_CL,transF_CZ,transF_KL,transF_KZ = F_mats_tr
+Fbar_KL,Fbar_JZ,Fbar_CZ,Fbar_JB,Fbar_CB = Fbars
+invL,invL_K,invLbar,invLbar_K,invL_LL,invLtwidle_L,invL_D,invLtwidle_LL,invLtwidle_D = Lmats_inv
+Lbar,Lbar_K,Ltwidle_K,L_LL,L_LZ,L_ZL,L_D= Ls
+i0,Ca = model_para
+sim_num = len(S.t)
+
+def renameOutputs(sim_num,num_start,num_end,S):
+    if num_end-num_start>0:
+        var = np.array(S.y[num_start:num_end])
+    else:
+        var = np.zeros(sim_num)
+    return var
+
+def indexOutputs(arr,i,num):
+    if num>0:
+        value = arr[:,i]
+    else:
+        value = 0
+    return value
+
+def Ext(lst):
+    return [item[i] for item in lst]
+
+phi_arr = renameOutputs(sim_num,0,numJ,S)
+V_arr = renameOutputs(sim_num,numJ,2*numJ,S)
+phic_arr = renameOutputs(sim_num,2*numJ,2*numJ+numC,S)
+Vc_arr = renameOutputs(sim_num,2*numJ+numC,2*numJ+2*numC,S)
+PhiZ_arr = renameOutputs(sim_num,2*numJ+2*numC,2*numJ+2*numC+numZ,S)
+
+phijc_arr = phi_arr
+np.append(phijc_arr,phic_arr)
+
+transF_JCL = np.transpose(np.concatenate((F_JL, F_CL),axis=0))
+transF_JCZ = np.transpose(np.concatenate((F_JZ, F_CZ),axis=0))
+
+invL_J =  i0
+
+iBvalue_arr = []
+Vz_arr = []
+PhiL_arr = []
+PhiK_arr = []
+iK_arr = []
+ForcingJ_arr =[]
+ForcingC_arr= []
+sqbrack1_arr= []
+sqbrack2_arr= []
+
+for i in range(len(S.t)):
+    iBvalue = [f(S.t[i]) for f in iB]
+
+    phijc = indexOutputs(phijc_arr,i,numC+numJ)
+    V = indexOutputs(V_arr,i,numJ)
+    phic = indexOutputs(phic_arr,i,numC)
+    Vc = indexOutputs(Vc_arr,i,numC)
+    PhiZ = indexOutputs(PhiZ_arr,i,numZ)
+
+    # NEED to check the dim of each term in the equation
+
+    # sqbrack1
+    try:
+        sqbrack1a = (Phi0 /2/np.pi) * transF_JCL @ phijc
+    except ValueError:
+        sqbrack1a = 0
+    try:
+        sqbrack1b = -transF_KL @ Ltwidle_K @ F_KB @ iBvalue
+    except ValueError:
+        sqbrack1b = 0
+    sqbrack1 = sqbrack1a+sqbrack1b
+
+    # sqbrack2
+    try:
+        sqbrack2a = (Phi0/2/np.pi) * transF_JCZ @ phijc
+    except ValueError:
+        sqbrack2a = 0
+    try:
+        sqbrack2b = - transF_KZ @ Ltwidle_K @ F_KB @ iBvalue
+    except ValueError:
+        sqbrack2b = 0
+    try:
+        sqbrack2c = - PhiZ
+    except ValueError:
+        sqbrack2c = 0
+    sqbrack2 = sqbrack2a + sqbrack2b + sqbrack2c
+
+    # Vz
+    try:
+        Vza = -invL_D @ L_ZL @ invLtwidle_LL @ sqbrack1
+    except ValueError:
+        Vza = 0
+    try:
+        Vzb = invLtwidle_D @ sqbrack2
+    except ValueError:
+        Vzb = 0
+    try:
+        Vz = Rz @ (Vza+Vzb)
+    except ValueError:
+        Vz = 0
+
+    # PhiL
+    try:
+        PhiLa = invLtwidle_LL @ sqbrack1
+    except ValueError:
+        PhiLa = 0
+    try:
+        PhiLb = invL_LL @ L_LZ @ (- invLtwidle_D) @ sqbrack2
+    except ValueError:
+        PhiLb = 0
+    try:
+        PhiL = Lbar @ (PhiLa + PhiLb)
+    except ValueError:
+        PhiL = 0
+
+    # ForcingJ
+    try:
+        ForcingJa = F_JL @ invLtwidle_L @ PhiL
+    except ValueError:
+        ForcingJa = 0
+    try:
+        ForcingJb = Fbar_JZ @ invRz @ Vz
+    except ValueError:
+        ForcingJb = 0
+    try:
+        ForcingJc = Fbar_JB @ iBvalue
+    except ValueError:
+        ForcingJc = 0
+    ForcingJ = ForcingJa + ForcingJb + ForcingJc
+
+    # ForcingC
+    try:
+        ForcingCa = F_CL @ invLtwidle_L @ PhiL
+    except ValueError:
+        ForcingCa = 0
+    try:
+        ForcingCb = Fbar_CZ @ invRz @ Vz
+    except ValueError:
+        ForcingCb = 0
+    try:
+        ForcingCc = Fbar_CB @ iBvalue
+    except ValueError:
+        ForcingCc = 0
+    ForcingC = ForcingCa +ForcingCb +ForcingCc
+
+    # PhiK
+    try:
+        PhiKa = Fbar_KL @ invLbar @ PhiL
+    except ValueError:
+        PhiKa = 0
+    try:
+        PhiKb = F_KZ @ invRz @ Vz
+    except ValueError:
+        PhiKb = 0
+    try:
+        PhiKc = F_KB @ iBvalue
+    except ValueError:
+        PhiKc = 0
+    try:
+        PhiK = - Ltwidle_K @ (PhiKa+PhiKb+PhiKc)
+    except ValueError:
+        PhiK = 0
+
+    # iK
+    # iK = F_KB @ iBvalue
+
+    sqbrack1_arr.append(sqbrack1)
+    sqbrack2_arr.append(sqbrack2)
+    Vz_arr.append(Vz)
+    PhiL_arr.append(PhiL)
+    PhiK_arr.append(PhiK)
+    iK_arr.append(iK)
+    ForcingJ_arr.append(ForcingJ)
+    ForcingC_arr.append(ForcingC)
+    iBvalue_arr.append(iBvalue)
+
+
+print("--- %s seconds ---" % (time.time() - start_time))
+
+# Current sources
+
+for i in range(numB):
+    plt.plot(S.t[:],np.array(Ext(iBvalue_arr))*1e6,'-',color='#4258a1',label="ODE Only")
+    plt.legend(loc="lower right",prop={'size': 10})
+    plt.xlabel(r"Time $(s)$")
+    plt.ylabel(r"Current $(\mu A)$")
+    plt.title(r"Current Source "+str(i%numB+1))
+    plt.savefig("FIG/fig_"+str(2*numJ+2*numC+numZ+i)+".png",dpi=800)
+    # plt.show()
+    plt.close()
+
+# Tree inductor flux
+
+for i in range(numK):
+    plt.plot(S.t[:],np.array(Ext(PhiK_arr)),'-',color='#4258a1',label="ODE Only")
+    plt.legend(loc="lower right",prop={'size': 10})
+    plt.xlabel(r"Time $(s)$")
+    plt.ylabel(r"Flux $(Wb)$")
+    plt.title(r"Tree Inductor "+str(i%numK+1))
+    plt.savefig("FIG/fig_"+str(2*numJ+2*numC+numZ+numB+i)+".png",dpi=800)
+    # plt.show()
+    plt.close()
+
+# Tree inductor current (not sure)
+
+# for i in range(numK):
+    # plt.plot(S.t[:],np.array(Ext(PhiK_arr)/L_K[i][i])*1e6,'-',color='#4258a1',label="ODE Only")
+    # plt.plot(S.t[:],np.array(iK_arr)*1e6,'-',color='#4258a1',label="ODE Only")
+    # plt.legend(loc="lower right",prop={'size': 10})
+    # plt.xlabel(r"Time $(s)$")
+    # plt.ylabel(r"Current $(\mu A)$")
+    # plt.title(r"Tree Inductor "+str(i%numK+1))
+    # plt.savefig("FIG/fig_"+str(2*numJ+2*numC+numZ+numB+numK+i)+".png",dpi=800)
+    # # plt.show()
+    # plt.close()
+
+# Chord inductor flux
+
+for i in range(numL):
+    plt.plot(S.t[:],np.array(Ext(PhiL_arr)),'-',color='#4258a1',label="ODE Only")
+    plt.legend(loc="lower right",prop={'size': 10})
+    plt.xlabel(r"Time $(s)$")
+    plt.ylabel(r"Flux $(Wb)$")
+    plt.title(r"Chord Inductor "+str(i%numK+1))
+    plt.savefig("FIG/fig_"+str(2*numJ+2*numC+numZ+numB+2*numK+i)+".png",dpi=800)
+    # plt.show()
+    plt.close()
+
+# Chord inductor current (not correct)
+
+# for i in range(numL):
+#     plt.plot(S.t[:],np.array(Ext(PhiL_arr)/L[i][i])*1e6,'-',color='#4258a1',label="ODE Only")
+#     plt.legend(loc="lower right",prop={'size': 10})
+#     plt.xlabel(r"Time $(s)$")
+#     plt.ylabel(r"Current $(\mu A)$")
+#     plt.title(r"Chord Inductor "+str(i%numK+1))
+#     plt.savefig("FIG/fig_"+str(2*numJ+2*numC+numZ+numB+2*numK+numL+i)+".png",dpi=800)
+#     # plt.show()
+#     plt.close()
+
+Vz_diff = []
+Vz_diff = np.diff(S.y[-1][:]) / np.diff(S.t)
+Vz_diff = cm.reshape(Vz_diff)
+
+for i in range(numZ):
+    PhiZ_num = np.array(Ext(Vz_arr))[1:] * difft[:]
+
+for i in range(numZ):
+    plt.plot(S.t[:],np.array(Ext(Vz_arr))*1e3,'-',color='#4258a1',label="ODE Only")
+    plt.plot(S.t[1:],np.array(Vz_diff)*1e3,'--',color='red',label="Numerical Vz")
+    plt.legend(loc="lower right",prop={'size': 10})
+    plt.xlabel(r"Time $(s)$")
+    plt.ylabel(r"Voltage $(mV)$")
+    plt.title(r"External Resistor "+str(i%numZ+1))
+    plt.savefig("FIG/fig_"+str(2*numJ+2*numC+2*numZ+numB+2*numK+2*numL+i)+".png",dpi=800)
+    # plt.show()
+    plt.close()
