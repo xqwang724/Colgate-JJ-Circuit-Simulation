@@ -273,6 +273,19 @@ def indexOutputs(arr,i,num):
 def Ext(lst):
     return [item[i] for item in lst]
 
+def Solvei_LK(L,L_K,L_LK,PhiL,PhiK):
+    L_t = np.hstack((L,L_LK))
+    L_tp = np.hstack((np.transpose(L_LK),L_K))
+    L_t = np.vstack((L_t,L_tp))
+
+    Y = np.concatenate((PhiL,PhiK),axis=None)
+    Y = Y.T
+
+    i_LK = np.linalg.solve(L_t, Y)
+    iL = i_LK[:numL]
+    iK = i_LK[numL:numL+numK]
+    return iL, iK
+
 phi_arr = renameOutputs(sim_num,0,numJ,S)
 V_arr = renameOutputs(sim_num,numJ,2*numJ,S)
 phic_arr = renameOutputs(sim_num,2*numJ,2*numJ+numC,S)
@@ -292,6 +305,7 @@ Vz_arr = []
 PhiL_arr = []
 PhiK_arr = []
 iK_arr = []
+iL_arr = []
 ForcingJ_arr =[]
 ForcingC_arr= []
 sqbrack1_arr= []
@@ -410,13 +424,14 @@ for i in range(len(S.t)):
     except ValueError:
         PhiK = 0
 
-    # iK
-    # iK = F_KB @ iBvalue
+    # Solving iL+iK
+    iL,iK = Solvei_LK(L,L_K,L_LK,PhiL,PhiK)
 
     sqbrack1_arr.append(sqbrack1)
     sqbrack2_arr.append(sqbrack2)
     Vz_arr.append(Vz)
     PhiL_arr.append(PhiL)
+    iL_arr.append(iL)
     PhiK_arr.append(PhiK)
     iK_arr.append(iK)
     ForcingJ_arr.append(ForcingJ)
@@ -450,18 +465,17 @@ for i in range(numK):
     # plt.show()
     plt.close()
 
-# Tree inductor current (not sure)
+# Tree inductor current
 
-# for i in range(numK):
-    # plt.plot(S.t[:],np.array(Ext(PhiK_arr)/L_K[i][i])*1e6,'-',color='#4258a1',label="ODE Only")
-    # plt.plot(S.t[:],np.array(iK_arr)*1e6,'-',color='#4258a1',label="ODE Only")
-    # plt.legend(loc="lower right",prop={'size': 10})
-    # plt.xlabel(r"Time $(s)$")
-    # plt.ylabel(r"Current $(\mu A)$")
-    # plt.title(r"Tree Inductor "+str(i%numK+1))
-    # plt.savefig("FIG/fig_"+str(2*numJ+2*numC+numZ+numB+numK+i)+".png",dpi=800)
-    # # plt.show()
-    # plt.close()
+for i in range(numK):
+    plt.plot(S.t[:],np.array(Ext(iK_arr))*1e6,'-',color='#4258a1',label="ODE Only")
+    plt.legend(loc="lower right",prop={'size': 10})
+    plt.xlabel(r"Time $(s)$")
+    plt.ylabel(r"Current $(\mu A)$")
+    plt.title(r"Tree Inductor "+str(i%numK+1))
+    plt.savefig("FIG/fig_"+str(2*numJ+2*numC+numZ+numB+numK+i)+".png",dpi=800)
+    # plt.show()
+    plt.close()
 
 # Chord inductor flux
 
@@ -475,17 +489,17 @@ for i in range(numL):
     # plt.show()
     plt.close()
 
-# Chord inductor current (not correct)
+# Chord inductor current
 
-# for i in range(numL):
-#     plt.plot(S.t[:],np.array(Ext(PhiL_arr)/L[i][i])*1e6,'-',color='#4258a1',label="ODE Only")
-#     plt.legend(loc="lower right",prop={'size': 10})
-#     plt.xlabel(r"Time $(s)$")
-#     plt.ylabel(r"Current $(\mu A)$")
-#     plt.title(r"Chord Inductor "+str(i%numK+1))
-#     plt.savefig("FIG/fig_"+str(2*numJ+2*numC+numZ+numB+2*numK+numL+i)+".png",dpi=800)
-#     # plt.show()
-#     plt.close()
+for i in range(numL):
+    plt.plot(S.t[:],np.array(Ext(iL_arr))*1e6,'-',color='#4258a1',label="ODE Only")
+    plt.legend(loc="lower right",prop={'size': 10})
+    plt.xlabel(r"Time $(s)$")
+    plt.ylabel(r"Current $(\mu A)$")
+    plt.title(r"Chord Inductor "+str(i%numK+1))
+    plt.savefig("FIG/fig_"+str(2*numJ+2*numC+numZ+numB+2*numK+numL+i)+".png",dpi=800)
+    # plt.show()
+    plt.close()
 
 Vz_diff = []
 Vz_diff = np.diff(S.y[-1][:]) / np.diff(S.t)
