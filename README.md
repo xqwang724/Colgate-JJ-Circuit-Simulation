@@ -2,7 +2,7 @@
 
 Here we present the source codes for simulating classical superconducting circuits. Contrary to existing methods that use differential algebraic equations, this program simulates superconducting circuits using only differential equations. These differential equations can be solved using ```SciPy.integrate.solve_ivp```. More theoretical details and demonstrations can be found in the following paper:
 
-> Paper Title
+> Simulation of JJ circuits with only ODEs.
 
 
 
