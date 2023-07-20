@@ -494,6 +494,8 @@ def ColgateJJSim(circuit_name, simulation_length):
         plt.close()
 
 if __name__ == "__main__":
+    if not os.path.exists("FIG"):
+        os.makedirs("FIG")
 
     # Remove files in the folder FIG
     files = glob.glob('FIG/*')
