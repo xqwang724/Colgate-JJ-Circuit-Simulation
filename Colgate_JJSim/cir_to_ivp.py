@@ -17,9 +17,8 @@ import os
 Phi0 = 2.067833848e-15
 
 
-#my_circuit = read_cir.cir_to_networkx("singleneuron_fast.cir")
-# my_circuit = read_cir.cir_to_networkx("jjdram_mod.cir")
-my_circuit = read_cir.cir_to_networkx("jjdram_00.cir")
+my_circuit = read_cir.cir_to_networkx("singleneuron_mod.cir")
+# my_circuit = read_cir.cir_to_networkx("singlejunction_IV.cir")
 
 print("Check non-MultiGraph:", my_circuit.edges.data())
 print(my_circuit.is_multigraph())
