@@ -83,7 +83,6 @@ def make_matrices(G, tree):
     resistor_edges = [(u,v,k) for (u,v,k,dd) in G.edges(data=True, keys=True) if ('R' in dd) and (u,v) not in junction_nodes and (u,v) not in capacitor_nodes]
 #    resistor_edges = [(u,v,k) for (u,v,k,dd) in G.edges(data=True, keys=True) if ('R' in dd)]
     shunt_resistor_edges = [(u,v,k) for (u,v,k,dd) in G.edges(data=True,keys=True) if ('R' in dd) and (u,v) in junction_nodes]
-#    shunt_resistor_edges = []
     shunt_resistor_edges_C = [(u,v,k) for (u,v,k,dd) in G.edges(data=True,keys=True) if ('R' in dd) and (u,v) in capacitor_nodes]
     inductor_edges = [(u,v,k) for (u,v,k,dd) in G.edges(data=True, keys=True) if 'L' in dd]
 
@@ -256,25 +255,7 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
 
     iBvalues = [f(0) for f in iB]
 
-    # iBint = []
-    # num_steps = 1000
-    # for j in range(numB):
-    #     iBint.append([])
-    #     for i in range(num_steps):
-    #         # print("iBint:",iBint[j])
-    #         # print("iBvalues:",iBvalues[j])
-    #         iBint[j].append(i*iBvalues[j]/num_steps)
-    # iBint = np.array(iBint)
-    # iB = np.concatenate(iB,iBint)
-
-    # for i in range(len(iBvalues)):
-    #     iBint.append(read_cir.make_pulse("pulse(0,"+str(iBvalues[i])+",0,"+str(rise)+",0,0,0)"))
-        # print("i:",i)
-    # print("IBint: \n",IBint)
-
-
     Rz, invRz, Rshunt, invRshunt , RshuntC, invRshuntC = Rzs
-#    eta, inveta, etaC, invetaC, area, invarea= etas
     C, invC, area, invarea = etas
 
     nume=len(next(iter(enames)))
@@ -316,10 +297,8 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
     transF_KZ = np.transpose(F_KZ)
 #    print("transF_KZ", transF_KZ)
 
-#    invL = LA.inv(L)
     invL = Ifinv(L)
 #    print("invL", invL)
-#    invL_K = LA.inv(L_K)
     invL_K = Ifinv(L_K)
 #    print("invL_K", invL_K)
     transL_LK = np.transpose(L_LK)
@@ -328,7 +307,6 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
     #3
     Lbar = L - (L_LK @ invL_K @ transL_LK)
 #    print("Lbar", Lbar)
-#    invLbar = LA.inv(Lbar)
     invLbar = Ifinv(Lbar)
 #    print("invLbar", invLbar)
 
@@ -341,13 +319,11 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
     #5
     Lbar_K = L_K - (transL_LK @ invL @ L_LK)
 #    print("Lbar_K", Lbar_K)
-#    invLbar_K = LA.inv(Lbar_K)
     invLbar_K = Ifinv(Lbar_K)
 #    print("invLbar_K", invLbar_K)
 
     #6
     L_Kshape = list(L_K.shape)
-#    Ltwidle_K = (LA.inv(np.eye(L_Kshape[0]) - (((L_K)@(Fbar_KL)@(invL))@(L_LK)@(invLbar_K)) )) @ L_K
     Ltwidle_K = (Ifinv(np.eye(L_Kshape[0]) - (((L_K)@(Fbar_KL)@(invL))@(L_LK)@(invLbar_K)) )) @ L_K
 #    print("Ltwidle_K", Ltwidle_K)
 #    transLtwidle_K = np.transpose(Ltwidle_K)
@@ -363,7 +339,6 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
 #    print("L_LL", L_LL)
 
     #8
-#    invL_LL = LA.inv(L_LL)
     invL_LL = Ifinv(L_LL)
 #    print("invL_LL", invL_LL)
 #    transInvL_LL = np.transpose(invL_LL)
@@ -390,12 +365,9 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
     L_ZL = transF_KZ @ Ltwidle_K @ Fbar_KL
 #    print("L_ZL", L_ZL)
 
-    #extra eqn: D = transF_KZ @ Ltwidle_K @ F_KZ
-    L_Z = Rz/1e15
-    L_D = transF_KZ @ Ltwidle_K @ F_KZ  #+ L_Z
-#    L_D = transF_KZ @ Ltwidle_K @ F_KZ  + L_Z
+    #extra eqn: D = L_D = transF_KZ @ Ltwidle_K @ F_KZ
+    L_D = transF_KZ @ Ltwidle_K @ F_KZ
     #print("L_D", L_D)
-#    invL_D = LA.inv(L_D)
     invL_D = Ifinv(L_D)
 #    print("invL_D", invL_D)
 
@@ -410,10 +382,8 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
 #    print("F_JL @ invLtwidle_L @ phiL",F_JL,"@",invLtwidle_L,"@phiL  = ",F_JL@invLtwidle_L,"@phiL")
 #    print("Fbar_JB @ iBvalue",Fbar_JB,"@iBvalue")
 
-#    invLtwidle_LL = LA.inv(L_LL - L_LZ @ invL_D @ L_ZL)
     invLtwidle_LL = Ifinv(L_LL - L_LZ @ invL_D @ L_ZL)
     print("invLtwidle_LL",invLtwidle_LL)
-#    invLtwidle_D = LA.inv(L_D - L_ZL @ invL_LL @ L_LZ)
     invLtwidle_D = Ifinv(L_D - L_ZL @ invL_LL @ L_LZ)
 #    print("invLtwidle_D",invLtwidle_D)
 #    print("Lbar",Lbar)
@@ -429,8 +399,6 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
     for i in range(numJ):
 #        print(models["B"+str(i)]["icrit"])
         i0[i,0] = area[i]*models["B"+str(i)]["icrit"]
-#    for i in range(numJ,numJ+numC):
-#        i0[i,0] = 0
     i0 = reshape(np.transpose(np.array(i0)))[0]
     #print("i0",i0)
 
@@ -456,7 +424,6 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
         PhiZ = y[(2*numJ+2*numC):(2*numJ+2*numC+numZ)]
 
         iBvalue = np.array([f(t) for f in iB])
-        invL_J =  i0
 
 # Merge vector both
         phijc = np.concatenate((phi,phic))
@@ -475,7 +442,7 @@ def manipulate_matrices(L_mats, F_mats, Rzs, etas, edge_types, num_types, enames
         ForcingC = (F_CL @ invLtwidle_L @ PhiL + Fbar_CZ @ invRz @ Vz + Fbar_CB @ iBvalue)
 
         dphi = 2*np.pi/Phi0*V
-        dV = 1/Ca * (-invL_J * np.sin(phi) - invReq * V - ForcingJ)
+        dV = 1/Ca * (-i0 * np.sin(phi) - invReq * V - ForcingJ)
         dphic = 2*np.pi/Phi0*Vc
         dVc = - invC @ (invReqC * Vc + ForcingC)
         dPhiz = Vz
