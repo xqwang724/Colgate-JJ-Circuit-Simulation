@@ -2,8 +2,7 @@
 
 Here we present the source codes for simulating classical superconducting circuits. Contrary to existing methods that use differential algebraic equations, this program simulates superconducting circuits using only differential equations. These differential equations can be solved using ```SciPy.integrate.solve_ivp```. More theoretical details and demonstrations can be found in the following paper:
 
-> Simulation of JJ circuits with only ODEs.
-
+> X. Wang, D. Schult and K. Segall, "Simulation of Josephson Junction Circuits With Only Ordinary Differential Equations," in IEEE Transactions on Applied Superconductivity, vol. 35, no. 2, pp. 1-8, March 2025, Art no. 1300708, doi: 10.1109/TASC.2025.3527885. keywords: {Mathematical models;Circuits;Josephson junctions;Inductors;Resistors;Differential equations;SQUIDs;Superconductivity;Capacitors;Vectors;Josephson circuits;simulation method},
 
 
 ## User guide
